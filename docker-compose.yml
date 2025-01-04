@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./ImageService
+      dockerfile: Dockerfile
+    ports:
+      - 50051:50051
+    depends_on:
+      - db
+    volumes:
+      - ./ImageService/internal/migrations:/app/internal/migrations
+    command: >
+      sh -c "echo 'Starting migrations...'
+             ls /app/internal/migrations &&
+             migrate -verbose -path /app/internal/migrations -database postgres://user:password@db:5432/photo_service?sslmode=disable up &&
+             sleep 6 &&
+             echo 'Running app...' &&
+             ./imageService"
+    networks:
+      - frontend
+  db:
+    image: postgres:15
+    container_name: postgres_db_Image
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: photo_service
+    ports:
+        - 5432:5432
+    volumes:
+        - db_data:/var/lib/postgresql/data
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    driver: bridge
+volumes:
+  db_data:
